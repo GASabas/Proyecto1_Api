@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[2]:
-
-
 import pandas as pd
 import numpy as np
 from fastapi import FastAPI
@@ -11,22 +5,8 @@ from fastapi import FastAPI
 app = FastAPI()
 
 
-
-# In[3]:
-
-
 movies_credits= pd.read_csv("./Movies/movies_credits.csv")
-
-
-# In[4]:
-
-
 movies_credits['release_date'] = pd.to_datetime(movies_credits['release_date'], errors='coerce')
-
-
-# In[5]:
-
-
 @app.get("/cantidad_filmaciones_mes/{mes}")
 def cantidad_filmaciones_mes(mes: str):
     
@@ -47,11 +27,6 @@ def cantidad_filmaciones_mes(mes: str):
     
     cantidad = len(peliculas_mes)
     return {"message": f"{cantidad} cantidad de películas fueron estrenadas en el mes de {mes.capitalize()}"}
-
-
-# In[6]:
-
-
 @app.get("/cantidad_filmaciones_dia/{dia}")
 def cantidad_filmaciones_dia(dia: str):
     
@@ -71,11 +46,6 @@ def cantidad_filmaciones_dia(dia: str):
     
     cantidad = len(peliculas_dia)
     return {"message": f"{cantidad} cantidad de películas fueron estrenadas en los días {dia.capitalize()}"}
-
-
-# In[7]:
-
-
 @app.get("/score_titulo/{titulo_de_la_filmacion}")
 def score_titulo(titulo_de_la_filmacion: str):
     
@@ -93,11 +63,6 @@ def score_titulo(titulo_de_la_filmacion: str):
     
     return {
         "message": f"La película '{titulo}' fue estrenada en el año {año_estreno} con un score/popularidad de {score}."}
-
-
-# In[8]:
-
-
 @app.get("/votos_titulo/{titulo_de_la_filmacion}")
 def votos_titulo(titulo_de_la_filmacion: str):
     
@@ -123,11 +88,6 @@ def votos_titulo(titulo_de_la_filmacion: str):
     return {
         "message": f"La película '{titulo}' fue estrenada en el año {año_estreno}. La misma cuenta con un total de {cantidad_votos} valoraciones, con un promedio de {promedio_votacion}."
     }
-
-
-# In[9]:
-
-
 @app.get("/get_actor/{nombre_actor}")
 def get_actor(nombre_actor: str):
     
@@ -153,11 +113,6 @@ def get_actor(nombre_actor: str):
         "message": f"El actor '{nombre_actor}' ha participado en {cantidad_peliculas} cantidad de filmaciones, "
                    f"el mismo ha conseguido un retorno de {retorno_total} con un promedio de {promedio_retorno} por filmación."
     }
-
-
-# In[10]:
-
-
 @app.get("/get_actor/{nombre_actor}")
 def get_actor(nombre_actor: str):
     
@@ -189,10 +144,3 @@ def get_actor(nombre_actor: str):
         "message": f"El actor '{nombre_actor}' ha participado en {len(actor_data)} películas, ha conseguido un retorno total de {retorno_total} con un promedio de {promedio_retorno}.",
         "peliculas": peliculas_detalle
     }
-
-
-# In[ ]:
-
-
-
-
