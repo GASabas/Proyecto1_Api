@@ -215,9 +215,11 @@ tfidf_matrix = tfidf.fit_transform(movies_credits['title'])
 
 cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
+movies_credits = movies_credits.dropna(subset=['title'])
+movies_credits['title'] = movies_credits['title'].str.strip().str.lower()
 
-
-indices = pd.Series(movies_credits.index, index=movies_credits['title'].drop_duplicates()
+movies_unique = movies_credits.drop_duplicates(subset=['title'])
+indices = pd.Series(movies_unique.index, index=movies_unique['title']).to_dict()
 
 @app.get("/recomendacion/{titulo}")
 def recomendacion(titulo: str):
