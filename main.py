@@ -212,14 +212,14 @@ def get_director(nombre_director: str):
 
 
 tfidf = TfidfVectorizer(stop_words='english')
-tfidf_matrix = tfidf.fit_transform(movies_credits['title'])
+tfidf_matrix = tfidf.fit_transform(movies_credits['genre_name'])
 
 cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
-movies_credits = movies_credits.dropna(subset=['title'])
-movies_credits['title'] = movies_credits['title'].str.strip().str.lower()
+movies_credits = movies_credits.dropna(subset=['genre_name'])
+movies_credits['genre_name'] = movies_credits['genre_name'].str.strip().str.lower()
 
-movies_unique = movies_credits.drop_duplicates(subset=['title'])
+movies_unique = movies_credits.drop_duplicates(subset=['genre_name'])
 indices = pd.Series(movies_unique.index, index=movies_unique['title'])
 
 @app.get("/recomendacion/{titulo}")
@@ -230,8 +230,8 @@ def recomendacion(titulo: str):
         if titulo_normalizado not in indices.index:
             return {"error": "Película no encontrada"}
 
-        idx = int(indices[titulo_normalizado])
-
+        idx = indices[titulo_normalizado]
+      
         sim_scores = list(enumerate(cosine_sim[idx]))
         sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:6]  
         movie_indices = [i[0] for i in sim_scores]
