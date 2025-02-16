@@ -17,7 +17,7 @@ app = FastAPI()
 # In[2]:
 
 
-movies_credits= pd.read_csv(r"C:\Users\gonza\OneDrive\Desktop\API\movies_credits.csv")
+movies_credits= pd.read_csv("movies_credits.csv")
 
 
 # In[3]:
@@ -144,7 +144,7 @@ def get_actor(nombre_actor: str):
     retorno_total = round(actor_data['return'].sum(), 2)
     promedio_retorno = round(actor_data['return'].mean(), 2)  
 
-    actor_data = actor_data.drop_duplicates(subset=['title'])  
+    
     
     peliculas_info = actor_data[['title', 'release_date', 'return', 'budget', 'revenue']]
     peliculas_info = peliculas_info.rename(columns={
@@ -187,7 +187,7 @@ def get_director(nombre_director: str):
     retorno_total = round(director_data['return'].sum(), 2)
     promedio_retorno = round(director_data['return'].mean(), 2) 
 
-    director_data = director_data.drop_duplicates(subset=['title'])  
+      
 
     
     peliculas_info = director_data[['title', 'release_date', 'return', 'budget', 'revenue']].rename(columns={
@@ -211,45 +211,31 @@ def get_director(nombre_director: str):
 
 
 tfidf = TfidfVectorizer(stop_words='english')
-tfidf_matrix = tfidf.fit_transform(movies_credits['title'].fillna(''))
+tfidf_matrix = tfidf.fit_transform(movies_credits['title'])
 
 cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
-indices = pd.Series(movies_credits.index, index=movies_credits['title'].str.lower()).drop_duplicates()
+
+
+indices = pd.Series(movies_credits.index, index=movies_credits['title'].drop_duplicates()
 
 @app.get("/recomendacion/{titulo}")
 def recomendacion(titulo: str):
+    try:
+        titulo_normalizado = titulo.strip().lower()
 
-    titulo_normalizado = titulo.strip().lower()
+        if titulo_normalizado not in indices.index:
+            return {"error": "Película no encontrada"}
+
+        idx = int(indices[titulo_normalizado])
+
+        sim_scores = list(enumerate(cosine_sim[idx]))
+        sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:6]  
+        movie_indices = [i[0] for i in sim_scores]
+
+        recommended_movies = movies_credits['title'].iloc[movie_indices].tolist()
+        return {"películas recomendadas": recommended_movies}
     
-    if titulo_normalizado not in indices:
-        return {"error": "Película no encontrada"}
-    
-    
-    idx = indices[titulo_normalizado]
-
-    
-    sim_scores = list(enumerate(cosine_sim[idx]))
-    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:6]  
-    movie_indices = [i[0] for i in sim_scores]
-
-    
-    recommended_movies = movies_credits['title'].iloc[movie_indices].tolist()
-    return {"películas recomendadas": recommended_movies}
-
-
-# In[ ]:
-
-
-import nbformat
-from nbconvert import PythonExporter
-
-with open("PI1_FastApi_Sabas.ipynb") as f:
-    notebook = nbformat.read(f, as_version=4)
-
-exporter = PythonExporter()
-script, _ = exporter.from_notebook_node(notebook)
-
-with open("PI1_FastApi_Sabas.py", "w") as f:
-    f.write(script)
+    except Exception as e:
+        return {"error": f"Ocurrió un error: {str(e)}"}
 
