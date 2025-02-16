@@ -230,13 +230,17 @@ def recomendacion(titulo: str):
     try:
         titulo_normalizado = titulo.strip().lower()
 
-    
+        
         idx = indices.get(titulo_normalizado)
         if idx is None:
             return {"error": "Película no encontrada"}
 
         
-        sim_scores = list(enumerate(cosine_sim[idx]))
+        if isinstance(idx, (pd.Series, np.ndarray, list)):
+            idx = idx.iloc[0] if isinstance(idx, pd.Series) else idx[0]
+
+        
+        sim_scores = list(enumerate(cosine_sim[int(idx)]))  
         sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:6]  
         movie_indices = [i[0] for i in sim_scores]
 
