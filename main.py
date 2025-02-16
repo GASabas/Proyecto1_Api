@@ -177,7 +177,7 @@ def get_director(nombre_director: str):
     if director_data.empty:
         return {"error": f"No se encontró ningún director con el nombre '{nombre_director}'."}
 
-    movies_director = movies_director.drop_duplicates(subset=['title'])
+    
     
     director_data = director_data.copy()
 
@@ -230,12 +230,12 @@ def recomendacion(titulo: str):
     try:
         titulo_normalizado = titulo.strip().lower()
 
-        if titulo_normalizado not in indices.index:
+    
+        idx = indices.get(titulo_normalizado)
+        if idx is None:
             return {"error": "Película no encontrada"}
 
-        idx = indices[titulo_normalizado]
-
-
+        
         sim_scores = list(enumerate(cosine_sim[idx]))
         sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:6]  
         movie_indices = [i[0] for i in sim_scores]
