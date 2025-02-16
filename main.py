@@ -177,6 +177,7 @@ def get_director(nombre_director: str):
     if director_data.empty:
         return {"error": f"No se encontró ningún director con el nombre '{nombre_director}'."}
 
+    movies_director = movies_director.drop_duplicates(subset=['title'])
     
     director_data = director_data.copy()
 
@@ -219,7 +220,7 @@ movies_credits = movies_credits.dropna(subset=['title'])
 movies_credits['title'] = movies_credits['title'].str.strip().str.lower()
 
 movies_unique = movies_credits.drop_duplicates(subset=['title'])
-indices = pd.Series(movies_unique.index, index=movies_unique['title']).to_dict()
+indices = pd.Series(movies_unique.index, index=movies_unique['title'])
 
 @app.get("/recomendacion/{titulo}")
 def recomendacion(titulo: str):
