@@ -1,12 +1,34 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
 import pandas as pd
 import numpy as np
 from fastapi import FastAPI
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 app = FastAPI()
 
 
-movies_credits= pd.read_csv("./Movies/movies_credits.csv")
+
+# In[2]:
+
+
+movies_credits= pd.read_csv(r"C:\Users\gonza\OneDrive\Desktop\API\movies_credits.csv")
+
+
+# In[3]:
+
+
 movies_credits['release_date'] = pd.to_datetime(movies_credits['release_date'], errors='coerce')
+
+
+# In[4]:
+
+
 @app.get("/cantidad_filmaciones_mes/{mes}")
 def cantidad_filmaciones_mes(mes: str):
     
@@ -27,6 +49,11 @@ def cantidad_filmaciones_mes(mes: str):
     
     cantidad = len(peliculas_mes)
     return {"message": f"{cantidad} cantidad de películas fueron estrenadas en el mes de {mes.capitalize()}"}
+
+
+# In[5]:
+
+
 @app.get("/cantidad_filmaciones_dia/{dia}")
 def cantidad_filmaciones_dia(dia: str):
     
@@ -46,6 +73,11 @@ def cantidad_filmaciones_dia(dia: str):
     
     cantidad = len(peliculas_dia)
     return {"message": f"{cantidad} cantidad de películas fueron estrenadas en los días {dia.capitalize()}"}
+
+
+# In[6]:
+
+
 @app.get("/score_titulo/{titulo_de_la_filmacion}")
 def score_titulo(titulo_de_la_filmacion: str):
     
@@ -63,6 +95,11 @@ def score_titulo(titulo_de_la_filmacion: str):
     
     return {
         "message": f"La película '{titulo}' fue estrenada en el año {año_estreno} con un score/popularidad de {score}."}
+
+
+# In[7]:
+
+
 @app.get("/votos_titulo/{titulo_de_la_filmacion}")
 def votos_titulo(titulo_de_la_filmacion: str):
     
@@ -88,45 +125,24 @@ def votos_titulo(titulo_de_la_filmacion: str):
     return {
         "message": f"La película '{titulo}' fue estrenada en el año {año_estreno}. La misma cuenta con un total de {cantidad_votos} valoraciones, con un promedio de {promedio_votacion}."
     }
+
+
+# In[8]:
+
+
 @app.get("/get_actor/{nombre_actor}")
 def get_actor(nombre_actor: str):
     
-    actor_data = movies_credits[movies_credits['cast'].apply(lambda x: any(actor['name'] == nombre_actor for actor in x))]
-    
-    
-    actor_data = actor_data[actor_data['director'] != nombre_actor]
-
-    
-    if actor_data.empty:
-        return {"error": f"No se encontró ningún actor con el nombre '{nombre_actor}'."}
-
-    
-    cantidad_peliculas = len(actor_data)
-
-    
-    actor_data['return'] = actor_data.apply(lambda row: row['revenue'] / row['budget'] if row['budget'] > 0 else 0, axis=1)
-    retorno_total = actor_data['return'].sum()
-    promedio_retorno = actor_data['return'].mean()
-
-    
-    return {
-        "message": f"El actor '{nombre_actor}' ha participado en {cantidad_peliculas} cantidad de filmaciones, "
-                   f"el mismo ha conseguido un retorno de {retorno_total} con un promedio de {promedio_retorno} por filmación."
-    }
-@app.get("/get_actor/{nombre_actor}")
-def get_actor(nombre_actor: str):
-    
-    actor_data = movies_credits[movies_credits['actor'] == nombre_actor]
+    actor_data = movies_credits[movies_credits['principal_actor'] == nombre_actor]
     
     
     if actor_data.empty:
         return {"error": f"No se encontró ningún actor con el nombre '{nombre_actor}'."}
     
-    
+    actor_data = actor_data.copy()
     actor_data['return'] = actor_data.apply(lambda row: row['revenue'] / row['budget'] if row['budget'] > 0 else 0, axis=1)
-    retorno_total = actor_data['return'].sum()
-    promedio_retorno = actor_data['return'].mean()
-    
+    retorno_total = round(actor_data['return'].sum(), 2)
+    promedio_retorno = round(actor_data['return'].mean(), 2)    
     
     peliculas_info = actor_data[['title', 'release_date', 'return', 'budget', 'revenue']]
     peliculas_info = peliculas_info.rename(columns={
@@ -144,3 +160,74 @@ def get_actor(nombre_actor: str):
         "message": f"El actor '{nombre_actor}' ha participado en {len(actor_data)} películas, ha conseguido un retorno total de {retorno_total} con un promedio de {promedio_retorno}.",
         "peliculas": peliculas_detalle
     }
+
+
+# In[9]:
+
+
+@app.get("/get_director/{nombre_director}")
+def get_director(nombre_director: str):
+    
+    
+    director_data = movies_credits[movies_credits['director'] == nombre_director]
+
+    
+    if director_data.empty:
+        return {"error": f"No se encontró ningún director con el nombre '{nombre_director}'."}
+
+    
+    director_data = director_data.copy()
+
+    
+    director_data['return'] = director_data.apply(lambda row: row['revenue'] / row['budget'] if row['budget'] > 0 else 0, axis=1)
+
+    
+    retorno_total = round(director_data['return'].sum(), 2)
+    promedio_retorno = round(director_data['return'].mean(), 2)
+
+    
+    peliculas_info = director_data[['title', 'release_date', 'return', 'budget', 'revenue']].rename(columns={
+        'title': 'Película',
+        'release_date': 'Fecha de Lanzamiento',
+        'return': 'Retorno',
+        'budget': 'Costo',
+        'revenue': 'Ganancia'
+    })
+
+    
+    peliculas_detalle = peliculas_info.to_dict(orient='records')
+
+    return {
+        "message": f"El director '{nombre_director}' ha dirigido {len(director_data)} películas, consiguiendo un retorno total de {retorno_total} con un promedio de {promedio_retorno} por filmación.",
+        "peliculas": peliculas_detalle
+    }
+
+
+# In[10]:
+
+
+tfidf = TfidfVectorizer(stop_words='english')
+tfidf_matrix = tfidf.fit_transform(movies_credits['title'].fillna(''))
+
+cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
+
+indices = pd.Series(movies_credits.index, index=movies_credits['title']).drop_duplicates()
+
+@app.get("/recomendacion/{titulo}")
+def recomendacion(titulo: str):
+    
+    if titulo not in indices:
+        return {"error": "Película no encontrada"}
+    
+    
+    idx = indices[titulo]
+
+    
+    sim_scores = list(enumerate(cosine_sim[idx]))
+    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:6]  
+    movie_indices = [i[0] for i in sim_scores]
+
+    
+    recommended_movies = movies_credits['title'].iloc[movie_indices].tolist()
+    return {"películas recomendadas": recommended_movies}
+
