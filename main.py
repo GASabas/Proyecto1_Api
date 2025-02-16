@@ -142,7 +142,8 @@ def get_actor(nombre_actor: str):
     actor_data = actor_data.copy()
     actor_data['return'] = actor_data.apply(lambda row: row['revenue'] / row['budget'] if row['budget'] > 0 else 0, axis=1)
     retorno_total = round(actor_data['return'].sum(), 2)
-    promedio_retorno = round(actor_data['return'].mean(), 2)    
+    promedio_retorno = round(actor_data['return'].mean(), 2)
+    actor_data = actor_data.drop.duplicates(subset=['title'])      
     
     peliculas_info = actor_data[['title', 'release_date', 'return', 'budget', 'revenue']]
     peliculas_info = peliculas_info.rename(columns={
@@ -211,16 +212,18 @@ tfidf_matrix = tfidf.fit_transform(movies_credits['title'].fillna(''))
 
 cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
-indices = pd.Series(movies_credits.index, index=movies_credits['title']).drop_duplicates()
+indices = pd.Series(movies_credits.index, index=movies_credits['title'].str.lower()).drop_duplicates()
 
 @app.get("/recomendacion/{titulo}")
 def recomendacion(titulo: str):
+
+    titulo_normalizado = titulo.strip().lower()
     
-    if titulo not in indices:
+    if titulo_normalizado not in indices:
         return {"error": "Película no encontrada"}
     
     
-    idx = indices[titulo]
+    idx = indices[titulo_normalizado]
 
     
     sim_scores = list(enumerate(cosine_sim[idx]))
