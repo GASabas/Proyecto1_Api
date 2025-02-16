@@ -216,10 +216,13 @@ tfidf_matrix = tfidf.fit_transform(movies_credits['genre_name'])
 
 cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
-movies_credits = movies_credits.dropna(subset=['genre_name'])
+movies_credits = movies_credits.dropna(subset=['genre_name'])  
+movies_credits['genre_name'] = movies_credits['genre_name'].astype(str)  
 movies_credits['genre_name'] = movies_credits['genre_name'].str.strip().str.lower()
 
 movies_unique = movies_credits.drop_duplicates(subset=['genre_name'])
+
+movies_unique['title'] = movies_unique['title'].astype(str).str.lower()  
 indices = pd.Series(movies_unique.index, index=movies_unique['title'])
 
 @app.get("/recomendacion/{titulo}")
@@ -231,14 +234,15 @@ def recomendacion(titulo: str):
             return {"error": "Película no encontrada"}
 
         idx = indices[titulo_normalizado]
-      
+
+        # Obtener películas similares basadas en la similitud de géneros
         sim_scores = list(enumerate(cosine_sim[idx]))
-        sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:6]  
+        sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:6]  # Top 5 sin incluir la original
         movie_indices = [i[0] for i in sim_scores]
 
-        recommended_movies = movies_credits['title'].iloc[movie_indices].tolist()
+        recommended_movies = movies_unique['title'].iloc[movie_indices].tolist()
         return {"películas recomendadas": recommended_movies}
-    
+
     except Exception as e:
         return {"error": f"Ocurrió un error: {str(e)}"}
 
