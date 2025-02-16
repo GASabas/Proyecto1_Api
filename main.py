@@ -127,7 +127,7 @@ def votos_titulo(titulo_de_la_filmacion: str):
     }
 
 
-# In[8]:
+# In[ ]:
 
 
 @app.get("/get_actor/{nombre_actor}")
@@ -142,8 +142,9 @@ def get_actor(nombre_actor: str):
     actor_data = actor_data.copy()
     actor_data['return'] = actor_data.apply(lambda row: row['revenue'] / row['budget'] if row['budget'] > 0 else 0, axis=1)
     retorno_total = round(actor_data['return'].sum(), 2)
-    promedio_retorno = round(actor_data['return'].mean(), 2)
-    actor_data = actor_data.drop.duplicates(subset=['title'])      
+    promedio_retorno = round(actor_data['return'].mean(), 2)  
+
+    actor_data = actor_data.drop_duplicates(subset=['title'])  
     
     peliculas_info = actor_data[['title', 'release_date', 'return', 'budget', 'revenue']]
     peliculas_info = peliculas_info.rename(columns={
@@ -163,7 +164,7 @@ def get_actor(nombre_actor: str):
     }
 
 
-# In[9]:
+# In[ ]:
 
 
 @app.get("/get_director/{nombre_director}")
@@ -184,7 +185,9 @@ def get_director(nombre_director: str):
 
     
     retorno_total = round(director_data['return'].sum(), 2)
-    promedio_retorno = round(director_data['return'].mean(), 2)
+    promedio_retorno = round(director_data['return'].mean(), 2) 
+
+    director_data = director_data.drop_duplicates(subset=['title'])  
 
     
     peliculas_info = director_data[['title', 'release_date', 'return', 'budget', 'revenue']].rename(columns={
@@ -204,7 +207,7 @@ def get_director(nombre_director: str):
     }
 
 
-# In[10]:
+# In[ ]:
 
 
 tfidf = TfidfVectorizer(stop_words='english')
@@ -233,4 +236,20 @@ def recomendacion(titulo: str):
     
     recommended_movies = movies_credits['title'].iloc[movie_indices].tolist()
     return {"películas recomendadas": recommended_movies}
+
+
+# In[ ]:
+
+
+import nbformat
+from nbconvert import PythonExporter
+
+with open("PI1_FastApi_Sabas.ipynb") as f:
+    notebook = nbformat.read(f, as_version=4)
+
+exporter = PythonExporter()
+script, _ = exporter.from_notebook_node(notebook)
+
+with open("PI1_FastApi_Sabas.py", "w") as f:
+    f.write(script)
 
