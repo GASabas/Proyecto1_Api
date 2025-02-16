@@ -211,18 +211,18 @@ def get_director(nombre_director: str):
 # In[ ]:
 
 
-tfidf = TfidfVectorizer(stop_words='english')
-tfidf_matrix = tfidf.fit_transform(movies_credits['genre_name'])
-
-cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
-
-movies_credits = movies_credits.dropna(subset=['genre_name'])  
-movies_credits['genre_name'] = movies_credits['genre_name'].astype(str)  
-movies_credits['genre_name'] = movies_credits['genre_name'].str.strip().str.lower()
+movies_credits = movies_credits.dropna(subset=['genre_name'])  # Eliminar NaN
+movies_credits = movies_credits[movies_credits['genre_name'].str.strip() != ""]  # Eliminar valores vacíos
+movies_credits['genre_name'] = movies_credits['genre_name'].astype(str).str.lower().str.strip()  # Convertir a string
 
 movies_unique = movies_credits.drop_duplicates(subset=['genre_name'])
 
-movies_unique['title'] = movies_unique['title'].astype(str).str.lower()  
+tfidf = TfidfVectorizer(stop_words='english')
+tfidf_matrix = tfidf.fit_transform(movies_unique['genre_name'])
+
+cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
+
+movies_unique['title'] = movies_unique['title'].astype(str).str.lower().str.strip()
 indices = pd.Series(movies_unique.index, index=movies_unique['title'])
 
 @app.get("/recomendacion/{titulo}")
@@ -235,9 +235,9 @@ def recomendacion(titulo: str):
 
         idx = indices[titulo_normalizado]
 
-        # Obtener películas similares basadas en la similitud de géneros
+
         sim_scores = list(enumerate(cosine_sim[idx]))
-        sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:6]  # Top 5 sin incluir la original
+        sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:6]  
         movie_indices = [i[0] for i in sim_scores]
 
         recommended_movies = movies_unique['title'].iloc[movie_indices].tolist()
