@@ -17,7 +17,7 @@ app = FastAPI()
 # In[13]:
 
 
-movies_credits= pd.read_csv(movies_credits.csv")
+movies_credits= pd.read_csv("movies_credits.csv")
 
 
 # In[14]:
