@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[12]:
 
 
 import pandas as pd
@@ -14,19 +14,13 @@ app = FastAPI()
 
 
 
-# In[2]:
+# In[13]:
 
 
-movies_credits= pd.read_csv("movies_credits.csv")
+movies_credits= pd.read_csv(r"C:\Users\gonza\OneDrive\Desktop\API\movies_credits.csv")
 
 
-# In[3]:
-
-
-movies_credits['release_date'] = pd.to_datetime(movies_credits['release_date'], errors='coerce')
-
-
-# In[4]:
+# In[14]:
 
 
 @app.get("/cantidad_filmaciones_mes/{mes}")
@@ -51,7 +45,7 @@ def cantidad_filmaciones_mes(mes: str):
     return {"message": f"{cantidad} cantidad de películas fueron estrenadas en el mes de {mes.capitalize()}"}
 
 
-# In[5]:
+# In[15]:
 
 
 @app.get("/cantidad_filmaciones_dia/{dia}")
@@ -75,7 +69,7 @@ def cantidad_filmaciones_dia(dia: str):
     return {"message": f"{cantidad} cantidad de películas fueron estrenadas en los días {dia.capitalize()}"}
 
 
-# In[6]:
+# In[16]:
 
 
 @app.get("/score_titulo/{titulo_de_la_filmacion}")
@@ -97,7 +91,7 @@ def score_titulo(titulo_de_la_filmacion: str):
         "message": f"La película '{titulo}' fue estrenada en el año {año_estreno} con un score/popularidad de {score}."}
 
 
-# In[7]:
+# In[17]:
 
 
 @app.get("/votos_titulo/{titulo_de_la_filmacion}")
@@ -132,34 +126,31 @@ def votos_titulo(titulo_de_la_filmacion: str):
 
 @app.get("/get_actor/{nombre_actor}")
 def get_actor(nombre_actor: str):
-    
     actor_data = movies_credits[movies_credits['principal_actor'] == nombre_actor]
-    
-    
+
     if actor_data.empty:
         return {"error": f"No se encontró ningún actor con el nombre '{nombre_actor}'."}
-    
+
+    # Mantener solo una fila por película, priorizando la de mayor revenue
+    actor_data = actor_data.sort_values(by='revenue', ascending=False).drop_duplicates(subset=['title'])
+
     actor_data = actor_data.copy()
     actor_data['return'] = actor_data.apply(lambda row: row['revenue'] / row['budget'] if row['budget'] > 0 else 0, axis=1)
     retorno_total = round(actor_data['return'].sum(), 2)
     promedio_retorno = round(actor_data['return'].mean(), 2)  
 
-    
-    
-    peliculas_info = actor_data[['title', 'release_date', 'return', 'budget', 'revenue']]
-    peliculas_info = peliculas_info.rename(columns={
+    peliculas_info = actor_data[['title', 'release_date', 'return', 'budget', 'revenue']].rename(columns={
         'title': 'Película',
         'release_date': 'Fecha de Lanzamiento',
         'return': 'Retorno',
         'budget': 'Costo',
         'revenue': 'Ganancia'
     })
-    
-    
+
     peliculas_detalle = peliculas_info.to_dict(orient='records')
-    
+
     return {
-        "message": f"El actor '{nombre_actor}' ha participado en {len(actor_data)} películas, ha conseguido un retorno total de {retorno_total} con un promedio de {promedio_retorno}.",
+        "message": f"El actor '{nombre_actor}' ha participado en {len(actor_data)} películas, consiguiendo un retorno total de {retorno_total} con un promedio de {promedio_retorno}.",
         "peliculas": peliculas_detalle
     }
 
@@ -169,28 +160,20 @@ def get_actor(nombre_actor: str):
 
 @app.get("/get_director/{nombre_director}")
 def get_director(nombre_director: str):
-    
-    
     director_data = movies_credits[movies_credits['director'] == nombre_director]
 
-    
     if director_data.empty:
         return {"error": f"No se encontró ningún director con el nombre '{nombre_director}'."}
 
     
-    
-    director_data = director_data.copy()
+    director_data = director_data.sort_values(by='revenue', ascending=False).drop_duplicates(subset=['title'])
 
-    
+    director_data = director_data.copy()
     director_data['return'] = director_data.apply(lambda row: row['revenue'] / row['budget'] if row['budget'] > 0 else 0, axis=1)
 
-    
     retorno_total = round(director_data['return'].sum(), 2)
     promedio_retorno = round(director_data['return'].mean(), 2) 
 
-      
-
-    
     peliculas_info = director_data[['title', 'release_date', 'return', 'budget', 'revenue']].rename(columns={
         'title': 'Película',
         'release_date': 'Fecha de Lanzamiento',
@@ -199,7 +182,6 @@ def get_director(nombre_director: str):
         'revenue': 'Ganancia'
     })
 
-    
     peliculas_detalle = peliculas_info.to_dict(orient='records')
 
     return {
@@ -208,7 +190,7 @@ def get_director(nombre_director: str):
     }
 
 
-# In[ ]:
+# In[20]:
 
 
 movies_credits = movies_credits.dropna(subset=['genre_name'])  # Eliminar NaN
@@ -241,7 +223,8 @@ def recomendacion(titulo: str):
 
         
         sim_scores = list(enumerate(cosine_sim[int(idx)]))  
-        sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:6]  
+        sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:6] 
+                sim_scores = [x for x in sim_scores if x[0] != idx][:5] 
         movie_indices = [i[0] for i in sim_scores]
 
         recommended_movies = movies_unique['title'].iloc[movie_indices].tolist()
@@ -249,4 +232,20 @@ def recomendacion(titulo: str):
 
     except Exception as e:
         return {"error": f"Ocurrió un error: {str(e)}"}
+
+
+# In[21]:
+
+
+import nbformat
+from nbconvert import PythonExporter
+
+with open("PI1_FastApi_Sabas.ipynb") as f:
+    notebook = nbformat.read(f, as_version=4)
+
+exporter = PythonExporter()
+script, _ = exporter.from_notebook_node(notebook)
+
+with open("PI1_FastApi_Sabas.py", "w") as f:
+    f.write(script)
 
