@@ -224,7 +224,7 @@ def recomendacion(titulo: str):
         
         sim_scores = list(enumerate(cosine_sim[int(idx)]))  
         sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:6] 
-                sim_scores = [x for x in sim_scores if x[0] != idx][:5] 
+        sim_scores = [x for x in sim_scores if x[0] != idx][:5] 
         movie_indices = [i[0] for i in sim_scores]
 
         recommended_movies = movies_unique['title'].iloc[movie_indices].tolist()
